@@ -18,6 +18,9 @@ dependencies:
   
   # TFLite
   tflite_flutter: ^0.11.0
+
+  # Offline Whisper STT
+  whisper_flutter_new: ^1.0.1
   
   # File utilities
   path_provider: ^2.1.2
@@ -35,3 +38,4 @@ flutter:
   assets:
     - assets/models/fraud_model.tflite
     - assets/models/vocab.json
+    - assets/models/ggml-tiny.en.bin

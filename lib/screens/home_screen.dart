@@ -1,9 +1,14 @@
+import 'dart:io';
+
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:fraud_detector/services/classifier.dart';
 import 'package:fraud_detector/services/preprocessor.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart';
+import 'package:whisper_flutter_new/whisper_flutter_new.dart';
 
 enum AppState { idle, recording, processing }
 
@@ -19,9 +24,11 @@ class _HomeScreenState extends State<HomeScreen> {
   final TextPreprocessor _preprocessor = TextPreprocessor();
   final FraudClassifier _classifier = FraudClassifier();
   final SpeechToText _speechToText = SpeechToText();
+  Whisper? _whisper;
   String _liveTranscript = '';
   bool _fraudDetected = false;
   String? _uploadedFileName;
+  String? _recordedFilePath;
   String? _resultLabel;
   double? _confidenceScore;
 
@@ -29,6 +36,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _initializeServices();
+    _initWhisper();
   }
 
   Future<void> _initializeServices() async {
@@ -39,6 +47,30 @@ class _HomeScreenState extends State<HomeScreen> {
       ]);
     } catch (error) {
       debugPrint('Initialization error: $error');
+    }
+  }
+
+  Future<void> _initWhisper() async {
+    try {
+      final appSupportDir = await getApplicationSupportDirectory();
+      final modelDir = appSupportDir.path;
+      final modelFile = File('$modelDir/ggml-tiny.bin');
+
+      if (!modelFile.existsSync()) {
+        final modelData = await rootBundle.load('assets/models/ggml-tiny.en.bin');
+        final bytes = modelData.buffer.asUint8List();
+        await modelFile.writeAsBytes(bytes, flush: true);
+      }
+
+      _whisper = Whisper(
+        model: WhisperModel.tiny,
+        modelDir: modelDir,
+      );
+
+      await _whisper!.getVersion();
+      debugPrint('Whisper STT engine loaded');
+    } catch (error) {
+      debugPrint('Whisper init error: $error');
     }
   }
 
@@ -89,28 +121,13 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
 
-    if (_fraudDetected) {
-      if (mounted) {
-        setState(() {
-          _appState = AppState.idle;
-        });
-      }
-      return;
-    }
-
     if (mounted) {
       setState(() {
         _appState = AppState.processing;
       });
     }
 
-    _classifyChunk(_liveTranscript);
-
-    if (mounted && !_fraudDetected) {
-      setState(() {
-        _appState = AppState.idle;
-      });
-    }
+    _analyzeRecording(_liveTranscript);
   }
 
   void _onSpeechResult(SpeechRecognitionResult result) {
@@ -131,72 +148,116 @@ class _HomeScreenState extends State<HomeScreen> {
     if (_fraudDetected) {
       return;
     }
-
-    _classifyChunk(result.recognizedWords);
   }
 
-  void _classifyChunk(String text) {
-    if (text.trim().isEmpty) {
-      return;
-    }
-
-    if (!_classifier.isLoaded) {
-      return;
-    }
-
+  Future<void> _uploadRecording() async {
     try {
-      final tokenIds = _preprocessor.preprocess(text);
-      final score = _classifier.classify(tokenIds);
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.audio,
+      );
+
+      if (result == null || result.files.single.path == null) {
+        return;
+      }
+
+      setState(() {
+        _appState = AppState.processing;
+        _uploadedFileName = result.files.single.name;
+        _recordedFilePath = result.files.single.path;
+        _fraudDetected = false;
+        _liveTranscript = 'Extracting audio...';
+        _resultLabel = null;
+        _confidenceScore = null;
+      });
+
+      final extractedText = await _transcribeAudioFile(_recordedFilePath!);
 
       if (!mounted) {
         return;
       }
 
-      if (score >= 0.5) {
-        _speechToText.stop();
+      setState(() {
+        _liveTranscript = extractedText;
+      });
+
+      _analyzeRecording(extractedText);
+    } catch (error) {
+      debugPrint('Upload error: $error');
+      if (mounted) {
         setState(() {
-          _fraudDetected = true;
-          _resultLabel = 'FRAUD DETECTED';
-          _confidenceScore = score;
           _appState = AppState.idle;
         });
+      }
+    }
+  }
+
+  Future<String> _transcribeAudioFile(String filePath) async {
+    if (_whisper == null) {
+      return 'Error: Transcription engine not loaded.';
+    }
+
+    try {
+      final response = await _whisper!.transcribe(
+        transcribeRequest: TranscribeRequest(
+          audio: filePath,
+          language: 'en',
+          isTranslate: false,
+          isNoTimestamps: true,
+          splitOnWord: true,
+        ),
+      );
+
+      final text = response.text.trim();
+      return text.isEmpty ? 'No speech detected in file.' : text;
+    } catch (error) {
+      debugPrint('Transcription error: $error');
+      return 'Transcription failed.';
+    }
+  }
+
+  void _analyzeRecording(String transcript) {
+    if (transcript.trim().isEmpty) {
+      if (mounted) {
+        setState(() {
+          _appState = AppState.idle;
+          _resultLabel = 'No speech detected';
+        });
+      }
+      return;
+    }
+
+    if (!_classifier.isLoaded) {
+      if (mounted) {
+        setState(() {
+          _appState = AppState.idle;
+          _resultLabel = 'Model not loaded';
+        });
+      }
+      return;
+    }
+
+    try {
+      final tokens = _preprocessor.preprocess(transcript);
+      final score = _classifier.classify(tokens);
+
+      if (!mounted) {
         return;
       }
 
       setState(() {
-        _resultLabel = 'LEGITIMATE CALL';
+        _fraudDetected = score >= 0.5;
         _confidenceScore = score;
+        _resultLabel = score >= 0.5 ? 'FRAUD DETECTED' : 'LEGITIMATE CALL';
+        _appState = AppState.idle;
       });
     } catch (error) {
-      debugPrint('Chunk classification error: $error');
-    }
-  }
-
-  Future<void> _uploadRecording() async {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.audio,
-      allowMultiple: false,
-    );
-
-    if (result == null || result.files.isEmpty) {
-      return;
-    }
-
-    final file = result.files.single;
-
-    setState(() {
-      _uploadedFileName = file.name;
-    });
-
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Upload analysis coming in a future update'),
-        ),
-      );
-      setState(() {
-        _uploadedFileName = null;
-      });
+      debugPrint('Analysis error: $error');
+      if (mounted) {
+        setState(() {
+          _appState = AppState.idle;
+          _resultLabel = 'Analysis failed';
+        });
+      }
     }
   }
 
