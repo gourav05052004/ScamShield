@@ -1,57 +1,71 @@
-# ScamShield
+# ScamShield 🛡️
 
-ScamShield is a Flutter app that helps users identify potentially fraudulent calls using on-device speech-to-text, local preprocessing, and TensorFlow Lite inference.
+ScamShield is a Flutter app that helps users spot potentially fraudulent calls using on-device speech-to-text, local preprocessing, and TensorFlow Lite inference.
 
-The app supports two analysis modes:
+It supports two analysis modes:
 
-- Live microphone recording for near real-time speech capture
-- Audio file upload for offline transcription and analysis
+- 🎙️ Live microphone recording for near real-time speech capture
+- 📂 Audio file upload for offline transcription and analysis
 
-After transcription, the text is normalized, converted into token IDs, and scored by a local ML model to produce a fraud risk result with confidence.
+Once the transcript is ready, the app normalizes the text, converts it into token IDs, and runs a local ML model to produce a fraud risk score with confidence.
 
-## Overview
+## Overview ✨
 
-ScamShield is designed as a simple, mobile-first fraud call detection assistant. It focuses on a single guided flow so users can quickly record speech, upload audio, and get a result without dealing with complex navigation.
+ScamShield is built as a simple, mobile-first fraud call detection assistant. The experience stays focused on one guided flow so users can record, upload, and review results without getting lost in menus.
 
 Core output labels:
 
-- FRAUD DETECTED
-- LEGITIMATE CALL
+- 🔴 FRAUD DETECTED
+- 🟢 LEGITIMATE CALL
 
-## Key Features
+## Why This App Stands Out 🚀
 
-- Live speech capture using `speech_to_text`
-- Offline audio transcription using `whisper_flutter_new`
-- On-device fraud classification using `tflite_flutter`
-- Local vocabulary-based preprocessing
-- Confidence score display with clear visual feedback
-- File upload support for existing recordings
-- Responsive, single-screen Flutter UI
+- 🎧 Live speech capture using `speech_to_text`
+- 🧠 Offline audio transcription using `whisper_flutter_new`
+- ⚡ On-device fraud classification using `tflite_flutter`
+- 🧹 Local vocabulary-based preprocessing
+- 📊 Confidence score display with clear visual feedback
+- 📁 File upload support for existing recordings
+- 📱 Responsive, single-screen Flutter UI
 
-## Demo
+## Demo Preview 🖼️
 
-### Screenshots
+### App Screenshots
 
-Use this section to place your demo images. Replace the sample paths below with the images you want to show.
+Explore the app's intuitive interface with these preview images:
 
-![Home Screen](assets/demo/home-screen.png)
-![Recording View](assets/demo/recording-view.png)
-![Fraud Result](assets/demo/fraud-result.png)
-![Legitimate Result](assets/demo/legitimate-result.png)
+<table>
+  <tr>
+    <td align="center"><b>Home Screen</b></td>
+    <td align="center"><b>Recording View</b></td>
+    <td align="center"><b>Fraud Detection</b></td>
+  </tr>
+  <tr>
+    <td><img src="assets/home-screen.png" alt="Home Screen" width="250"></td>
+    <td><img src="assets/recording-view.png" alt="Recording View" width="250"></td>
+    <td><img src="assets/fraud-result.png" alt="Fraud Result" width="250"></td>
+  </tr>
+  <tr>
+    <td align="center"><b>Legitimate Call</b></td>
+    <td align="center"><b>App Logo</b></td>
+    <td></td>
+  </tr>
+  <tr>
+    <td><img src="assets/legitimate-result.png" alt="Legitimate Result" width="250"></td>
+    <td><img src="assets/image.png" alt="App Logo" width="250"></td>
+    <td></td>
+  </tr>
+</table>
 
-
-
-### APK Download
+## APK Download 📦
 
 Place the compiled app APK here and link it from this section.
 
 - Latest APK: [Download ScamShield APK](https://drive.google.com/file/d/1t6CsKAp5nkWFd2WoZ5XIvlZcjvjsJsEc/view?usp=drive_link)
 
+## Frontend Summary 🎨
 
-
-## Frontend Summary
-
-The Flutter frontend is built to make fraud detection fast and easy for non-technical users. The interface uses a focused layout with one main screen, clear action buttons, and result cards that update immediately after analysis.
+The Flutter frontend is designed to make fraud detection fast and easy for non-technical users. The interface uses a focused layout with one main screen, clear action buttons, and result cards that update immediately after analysis.
 
 Highlights from the UI/UX approach:
 
@@ -61,7 +75,7 @@ Highlights from the UI/UX approach:
 - Immediate loading and feedback states
 - Clear transcript presentation for user review
 
-## Technology Stack
+## Technology Stack 🧰
 
 - Flutter / Dart
 - Material Design UI components
@@ -72,7 +86,7 @@ Highlights from the UI/UX approach:
 - `permission_handler` for runtime permissions
 - `path_provider` for local file access
 
-## How It Works
+## How It Works 🔍
 
 1. User records speech or uploads an audio file.
 2. The app converts audio into transcript text.
@@ -81,7 +95,7 @@ Highlights from the UI/UX approach:
 5. The TensorFlow Lite model produces a fraud score.
 6. The UI shows the final label and confidence.
 
-## Project Architecture
+## Project Architecture 🧱
 
 ### Core Files
 
@@ -96,7 +110,7 @@ Highlights from the UI/UX approach:
 - [assets/models/vocab.json](assets/models/vocab.json)
 - [assets/models/ggml-tiny.en.bin](assets/models/ggml-tiny.en.bin)
 
-## UI Structure
+## UI Structure 🧭
 
 The current frontend uses a single-screen flow with these main sections:
 
@@ -106,7 +120,7 @@ The current frontend uses a single-screen flow with these main sections:
 - Input controls for recording and upload
 - Status feedback for loading and errors
 
-## Setup
+## Setup 🛠️
 
 ### Prerequisites
 
@@ -135,7 +149,7 @@ flutter build apk --release
 
 The release APK will be generated under the Flutter build output directory.
 
-## Permissions and Platform Notes
+## Permissions and Platform Notes 📌
 
 ### Android
 
@@ -145,9 +159,7 @@ The Android manifest includes permissions for:
 - File access
 - Internet access
 
-
-
-## Model and Data Notes
+## Model and Data Notes 🧬
 
 ScamShield uses a local ML pipeline, so prediction quality depends on keeping the preprocessing and model assets aligned.
 
@@ -159,7 +171,7 @@ If you update the model, make sure these stay in sync:
 
 The current pipeline uses a fixed sequence length of 60 tokens.
 
-## Testing
+## Testing ✅
 
 ```bash
 flutter test
@@ -167,7 +179,7 @@ flutter test
 
 The default widget test is still a template-style test, so it does not fully cover the fraud detection flow yet.
 
-## Troubleshooting
+## Troubleshooting 🧩
 
 - Model not loaded
   - Confirm the TFLite model exists in `assets/models/` and is listed in `pubspec.yaml`.
@@ -181,14 +193,14 @@ The default widget test is still a template-style test, so it does not fully cov
 - Poor prediction quality
   - Make sure the vocabulary matches the training vocabulary and that preprocessing matches the model expectations.
 
-## Current Limitations
+## Current Limitations ⚠️
 
 - Binary classification only
 - No history or session tracking
 - Limited automated coverage for ML and UI flows
 - Designed primarily for English transcription and inference
 
-## Future Improvements
+## Future Improvements 🌱
 
 - Add test coverage for preprocessing and inference
 - Add history and analytics screens
