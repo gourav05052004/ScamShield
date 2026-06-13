@@ -208,3 +208,6 @@ The default widget test is still a template-style test, so it does not fully cov
 - Add adjustable threshold settings
 - Add optional cloud sync for reports
 
+## License 📄
+
+This project is licensed under the MIT License.
